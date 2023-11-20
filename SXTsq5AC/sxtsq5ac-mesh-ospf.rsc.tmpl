@@ -34,9 +34,9 @@ add authentication-types=wpa-psk,wpa2-psk management-protection=allowed mode=\
 
 /interface wireless
 set [ find default-name=wlan1 ] band=5ghz-a/n/ac channel-width=20/40/80mhz-Ceee country="united states3" disabled=no distance=dynamic antenna-gain=0 installation=any frequency=5180 mode=station-bridge security-profile=tucsonmeshnet wireless-protocol=802.11 wps-mode=disabled ssid="tucsonmesh-xxxx-omni" radio-name=("tucsonmesh-" . $nodenumber . "-sxt") comment="uses tucsonmesh-xxxx-omni via mesh bridge"
-# add disabled=yes master-interface=wlan1 name=wlan2 ssid="tucsonmesh-wds" wds-default-bridge=wds wds-mode=dynamic-mesh wps-mode=disabled security-profile=tucsonmeshnet comment="wds station-mode fallback interface"
 
-/interface wireless connect-list
+# Don't see a need for this on a bridged configuration
+# /interface wireless connect-list
 # add allow-signal-out-of-range=3s disabled=yes interface=wlan2 security-profile=tucsonmeshnet signal-range=-75..120
 # add connect=no disabled=yes interface=wlan2 security-profile=tucsonmeshnet signal-range=-120..-75
 
@@ -47,7 +47,6 @@ add address=($wdsip . "/16") interface=wds
 /interface bridge port
 add bridge=mesh interface=ether1
 add bridge=mesh interface=wlan1
-# add bridge=wds  interface=wlan2
 add bridge=wds  interface=dynamic internal-path-cost=100 path-cost=100
 
 /interface bridge filter
