@@ -1,4 +1,4 @@
-# NYC Mesh Mikrotik SXTsq 5ac OSPF config
+# Tucson Mesh Mikrotik SXTsq 5ac OSPF config
 # OSPF mesh node
 :global nodenumber {{nodenumber}}
 
@@ -17,7 +17,6 @@
 
 /delay 15
 
-
 :foreach x in=[/interface wireless find] do={ /interface wireless reset-configuration $x }
 
 /interface bridge
@@ -30,15 +29,16 @@ set use-ip-firewall=yes
 
 /interface wireless security-profiles
 add authentication-types=wpa-psk,wpa2-psk management-protection=allowed mode=\
-    dynamic-keys name=nycmeshnet supplicant-identity=nycmesh \
-    wpa-pre-shared-key=nycmeshnet wpa2-pre-shared-key=nycmeshnet
+    dynamic-keys name=tucsonmeshnet supplicant-identity=tucsonmesh \
+    wpa-pre-shared-key=tucsonmeshnet wpa2-pre-shared-key=tucsonmeshnet
 
 /interface wireless
-set [ find default-name=wlan1 ] band=5ghz-a/n/ac channel-width=20/40/80mhz-Ceee country="united states3" disabled=no distance=dynamic antenna-gain=0 installation=any frequency=5180 mode=station-bridge security-profile=nycmeshnet wireless-protocol=802.11 wps-mode=disabled ssid="nycmesh-xxxx-omni" radio-name=("nycmesh-" . $nodenumber . "-sxt") comment="uses nycmesh-xxxx-omni via mesh bridge"
+set [ find default-name=wlan1 ] band=5ghz-a/n/ac channel-width=20/40/80mhz-Ceee country="united states3" disabled=no distance=dynamic antenna-gain=0 installation=any frequency=5180 mode=station-bridge security-profile=tucsonmeshnet wireless-protocol=802.11 wps-mode=disabled ssid="tucsonmesh-xxxx-omni" radio-name=("tucsonmesh-" . $nodenumber . "-sxt") comment="uses tucsonmesh-xxxx-omni via mesh bridge"
+# add disabled=yes master-interface=wlan1 name=wlan2 ssid="tucsonmesh-wds" wds-default-bridge=wds wds-mode=dynamic-mesh wps-mode=disabled security-profile=tucsonmeshnet comment="wds station-mode fallback interface"
 
 /interface wireless connect-list
-add allow-signal-out-of-range=3s disabled=yes interface=wlan1 security-profile=nycmeshnet signal-range=-75..120
-add connect=no disabled=yes interface=wlan1 security-profile=nycmeshnet signal-range=-120..-75
+# add allow-signal-out-of-range=3s disabled=yes interface=wlan2 security-profile=tucsonmeshnet signal-range=-75..120
+# add connect=no disabled=yes interface=wlan2 security-profile=tucsonmeshnet signal-range=-120..-75
 
 /ip address
 add address=($meship . "/16") interface=mesh
@@ -47,14 +47,15 @@ add address=($wdsip . "/16") interface=wds
 /interface bridge port
 add bridge=mesh interface=ether1
 add bridge=mesh interface=wlan1
-add bridge=wds interface=dynamic internal-path-cost=100 path-cost=100
+# add bridge=wds  interface=wlan2
+add bridge=wds  interface=dynamic internal-path-cost=100 path-cost=100
 
 /interface bridge filter
 add action=drop chain=forward in-bridge=mesh
 add action=drop chain=forward in-bridge=wds
 
 /ip dns
-set allow-remote-requests=yes servers=10.10.10.10,1.1.1.1
+set allow-remote-requests=yes servers=1.1.1.1,1.0.0.1
 
 /routing ospf instance set [ find default=yes ] router-id=$meship redistribute-connected=as-type-1
 /routing filter add chain="ospf-in" set-bgp-communities=65000:110 set-distance=205
@@ -65,8 +66,6 @@ set allow-remote-requests=yes servers=10.10.10.10,1.1.1.1
 
 /ip firewall address-list
 add address=10.0.0.0/8 list=meshaddr
-add address=199.167.59.0/24 list=meshaddr
-add address=199.170.132.0/24 list=meshaddr
 
 /ip firewall filter
 add action=accept chain=input protocol=icmp
@@ -86,10 +85,15 @@ set dccp disabled=yes
 set sctp disabled=yes
 
 /snmp set enabled=yes
+/snmp community add name="mesh-monitoring" addresses=0.0.0.0/0 security=private read-access=yes write-access=no authentication-protocol=SHA1 encryption-protocol=AES authentication-password=unset encryption-password=unset
+/snmp community disable 0
+/snmp set trap-community="mesh-monitoring"
+/snmp set trap-version=3
+/snmp set trap-generators=temp-exception
 
-/system identity set name=("nycmesh-" . $nodenumber . "-sxt")
+/system identity set name=("tucsonmesh-" . $nodenumber . "-sxt")
 
-/system clock set time-zone-name=America/New_York
+/system clock set time-zone-name=America/Phoenix
 /system ntp client
-set enabled=yes primary-ntp=10.10.10.123 server-dns-names=0.pool.ntp.org
+set enabled=yes primary-ntp=0.0.0.0 server-dns-names=0.pool.ntp.org
 
